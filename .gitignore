@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+dist/
+qa/runtime/
+HANDOFF.json
+.env
+.env.*
+!.env.example
+.DS_Store
+*.sublime-workspace

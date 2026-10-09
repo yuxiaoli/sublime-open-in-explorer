@@ -1,0 +1,33 @@
+test_access_denied_and_stat_errors_are_handled (test_reveal.RevealTests.test_access_denied_and_stat_errors_are_handled) ... ok
+test_clicked_tab_in_other_group_is_revealed (test_reveal.RevealTests.test_clicked_tab_in_other_group_is_revealed) ... ok
+test_closed_or_foreign_sheet_is_disabled (test_reveal.RevealTests.test_closed_or_foreign_sheet_is_disabled) ... ok
+test_closed_sheet_file_name_failure_is_handled (test_reveal.RevealTests.test_closed_sheet_file_name_failure_is_handled) ... ok
+test_default_sentinels_do_not_use_python_negative_indexing (test_reveal.RevealTests.test_default_sentinels_do_not_use_python_negative_indexing) ... ok
+test_deleted_after_menu_enable_is_rechecked (test_reveal.RevealTests.test_deleted_after_menu_enable_is_rechecked) ... ok
+test_directory_path_is_disabled (test_reveal.RevealTests.test_directory_path_is_disabled) ... ok
+test_dirty_saved_buffer_reveals_disk_file_without_saving (test_reveal.RevealTests.test_dirty_saved_buffer_reveals_disk_file_without_saving) ... ok
+test_editor_expansion_mismatch_blocks_dispatch_with_status (test_reveal.RevealTests.test_editor_expansion_mismatch_blocks_dispatch_with_status) ... ok
+test_editor_expansion_runtime_error_blocks_dispatch_with_status (test_reveal.RevealTests.test_editor_expansion_runtime_error_blocks_dispatch_with_status) ... ok
+test_empty_file_name_is_disabled (test_reveal.RevealTests.test_empty_file_name_is_disabled) ... ok
+test_empty_group_is_disabled (test_reveal.RevealTests.test_empty_group_is_disabled) ... ok
+test_image_sheet_before_text_does_not_shift_clicked_index (test_reveal.RevealTests.test_image_sheet_before_text_does_not_shift_clicked_index) ... ok
+test_inactive_clicked_tab_is_revealed (test_reveal.RevealTests.test_inactive_clicked_tab_is_revealed) ... ok
+test_invalid_file_name_is_handled (test_reveal.RevealTests.test_invalid_file_name_is_handled) ... ok
+test_invalid_indices_never_fall_back_to_active_tab (test_reveal.RevealTests.test_invalid_indices_never_fall_back_to_active_tab) ... ok
+test_missing_file_is_disabled_and_not_created (test_reveal.RevealTests.test_missing_file_is_disabled_and_not_created) ... ok
+test_missing_parent_is_disabled_without_creating_it (test_reveal.RevealTests.test_missing_parent_is_disabled_without_creating_it) ... ok
+test_non_integer_and_boolean_indices_are_rejected (test_reveal.RevealTests.test_non_integer_and_boolean_indices_are_rejected) ... ok
+test_open_dir_failure_reports_status (test_reveal.RevealTests.test_open_dir_failure_reports_status) ... ok
+test_relative_file_name_is_disabled (test_reveal.RevealTests.test_relative_file_name_is_disabled) ... ok
+test_saved_image_sheet_can_be_revealed (test_reveal.RevealTests.test_saved_image_sheet_can_be_revealed) ... ok
+test_sheet_lookup_failure_is_handled (test_reveal.RevealTests.test_sheet_lookup_failure_is_handled) ... ok
+test_snippet_variable_names_in_directory_and_file_are_literal (test_reveal.RevealTests.test_snippet_variable_names_in_directory_and_file_are_literal) ... ok
+test_spaces_unicode_and_shell_characters_are_data (test_reveal.RevealTests.test_spaces_unicode_and_shell_characters_are_data) ... ok
+test_tab_menu_entry_has_context_placeholders (test_reveal.RevealTests.test_tab_menu_entry_has_context_placeholders) ... ok
+test_untitled_buffer_is_disabled (test_reveal.RevealTests.test_untitled_buffer_is_disabled) ... ok
+test_windows_drive_and_unc_paths_preserve_exact_components (test_reveal.RevealTests.test_windows_drive_and_unc_paths_preserve_exact_components) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 0.008s
+
+OK
