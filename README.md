@@ -24,6 +24,57 @@ A standard Windows installation normally uses `%APPDATA%\Sublime Text\Installed 
 
 Do not copy the entire source project or its test directory into `Packages`. This plugin does not require Package Control, an API key, or a separate Python installation.
 
+### Install with the Python helper
+
+The optional installer requires **Python 3.8 or later**, using only the standard library. It runs outside Sublime Text; the manual installation methods above do not require a separate Python installation. Run it from the source project root.
+
+Preview the detected installation without making any filesystem changes:
+
+```sh
+python3 scripts/install.py --dry-run
+```
+
+After checking the reported target, close Sublime Text and install:
+
+```sh
+python3 scripts/install.py
+```
+
+The helper looks for an existing Sublime Text 4 data directory at the usual user location:
+
+- Windows: `%APPDATA%\Sublime Text`.
+- macOS: `~/Library/Application Support/Sublime Text`.
+- Linux: `$XDG_CONFIG_HOME/sublime-text`, or `~/.config/sublime-text` when `XDG_CONFIG_HOME` is unset.
+
+For a portable installation or a custom data directory, use **Preferences → Browse Packages…** to find the active data directory, then pass its exact `Installed Packages` path. The directory must be named `Installed Packages`; it may be created by the helper if its parent data directory already exists. Missing parent directories and invalid targets cause an error.
+
+```sh
+python3 scripts/install.py --target "/path/to/Sublime Text/Installed Packages" --dry-run
+python3 scripts/install.py --target "/path/to/Sublime Text/Installed Packages"
+```
+
+On Windows, these PowerShell examples use the Python launcher:
+
+```powershell
+py -3 scripts/install.py --target "$env:APPDATA\Sublime Text\Installed Packages" --dry-run
+py -3 scripts/install.py --target "$env:APPDATA\Sublime Text\Installed Packages"
+```
+
+Use `python` instead of `py -3` if your Python installation does not provide the launcher.
+
+The helper creates `RevealInDefaultExplorer.sublime-package` directly from an explicit list of the plugin's three runtime files, `README.md`, and `LICENSE`. It does not require a prebuilt archive or include tests, Git files, or secrets. Unrelated packages and user settings are left untouched.
+
+Reinstalling an identical archive is a no-op. To update a different existing archive, preview and then explicitly approve the replacement with `--update`:
+
+```sh
+python3 scripts/install.py --target "/path/to/Sublime Text/Installed Packages" --update --dry-run
+python3 scripts/install.py --target "/path/to/Sublime Text/Installed Packages" --update
+```
+
+Before replacing the archive, the helper saves a unique backup ending in `.bak` alongside it; Sublime does not load that backup as a package. It refuses symlink targets and a duplicate unpacked `Packages/RevealInDefaultExplorer` installation. Move any unpacked copy to a backup location outside `Packages` before using the helper. Restart Sublime Text after installation.
+
+First installation requires filesystem support for hard links so that a concurrently appearing package cannot be overwritten. If this is unavailable, the helper stops with guidance to use the manual archive installation method above.
+
 ## Usage and limitations
 
 - Right-click the tab you want to reveal and select **Open in Explorer**. The command uses the clicked tab, including inactive tabs and tabs in other groups; you do not need to activate it first.
@@ -61,7 +112,7 @@ python3 -m unittest discover -s tests -v
 python3 scripts/build.py
 ```
 
-The build produces the installable package, a source ZIP, `SHA256SUMS`, and a manifest of file sizes and hashes. Tests use minimal Sublime stubs and the standard library's `ntpath` for Windows path handling. These tests are not equivalent to acceptance testing in the actual Sublime GUI or Windows Explorer. See `qa/VALIDATION.md` for detailed evidence and `qa/EDITOR_QA.md` for the manual Windows checks.
+The build produces the installable package, a source ZIP, `SHA256SUMS`, and a manifest of file sizes and hashes. Plugin tests use minimal Sublime stubs and the standard library's `ntpath` for Windows path handling. Installer tests use real file operations in temporary directories, covering first installs, repeat installs, updates with backups, dry runs, invalid targets, and paths with spaces and Unicode. They do not install into a live Sublime profile. These tests are not equivalent to acceptance testing in the actual Sublime GUI or Windows Explorer. See `qa/VALIDATION.md` for the original plugin evidence, `qa/INSTALLER-VALIDATION.md` for installer validation, and `qa/EDITOR_QA.md` for the manual Windows checks.
 
 ## Quick start
 
