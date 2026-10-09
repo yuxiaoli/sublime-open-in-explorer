@@ -112,6 +112,33 @@ def write_temporary(target, payload, suffix):
     return path
 
 
+def write_new_package(package, payload):
+    """Portable first-install fallback: create exclusively, never truncate."""
+    try:
+        stream = package.open("xb")
+    except FileExistsError as error:
+        raise InstallError("A package appeared during installation; it was not replaced.") from error
+    created = None
+    try:
+        with stream:
+            created = os.fstat(stream.fileno())
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except BaseException as error:
+        # Remove our incomplete file only if nobody has replaced it meanwhile.
+        if created is not None and created.st_ino:
+            try:
+                if os.path.samestat(created, package.lstat()):
+                    package.unlink()
+            except FileNotFoundError:
+                pass
+        if isinstance(error, OSError):
+            raise InstallError("First installation could not be completed: " + str(error) +
+                               ". Inspect " + str(package) + " before retrying.") from error
+        raise
+
+
 def install(root, target, dry_run=False, update=False):
     payload = build_package(Path(root))
     target = validate_target(target)
@@ -148,10 +175,11 @@ def install(root, target, dry_run=False, update=False):
                 os.link(str(temporary), str(package))
             except FileExistsError as error:
                 raise InstallError("A package appeared during installation; it was not replaced.") from error
-            except OSError as error:
-                raise InstallError("Safe first installation failed: " + str(error) +
-                                   ". Use a filesystem supporting hard links or install the "
-                                   "archive manually; no existing package was replaced.") from error
+            except OSError:
+                # Some portable/network filesystems do not support hard links.
+                # xb still refuses any existing file; keep the editor closed
+                # until this non-atomic first-install fallback finishes.
+                write_new_package(package, payload)
     finally:
         if temporary.exists():
             temporary.unlink()

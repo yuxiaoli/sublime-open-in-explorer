@@ -73,7 +73,7 @@ python3 scripts/install.py --target "/path/to/Sublime Text/Installed Packages" -
 
 Before replacing the archive, the helper saves a unique backup ending in `.bak` alongside it; Sublime does not load that backup as a package. It refuses symlink targets and a duplicate unpacked `Packages/RevealInDefaultExplorer` installation. Move any unpacked copy to a backup location outside `Packages` before using the helper. Restart Sublime Text after installation.
 
-First installation requires filesystem support for hard links so that a concurrently appearing package cannot be overwritten. If this is unavailable, the helper stops with guidance to use the manual archive installation method above.
+The source project and installation directory may be on different drives. First installation uses a temporary archive in the target directory, with exclusive creation as a fallback when hard links are unavailable. Both methods refuse to overwrite a package that appears during installation. Keep Sublime Text closed until the command finishes; updates retain a backup and replace the archive atomically.
 
 ## Usage and limitations
 

@@ -254,11 +254,93 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(self.package.read_bytes(), b"arrived concurrently")
         self.assertEqual(list(self.target.iterdir()), [self.package])
 
-    def test_first_install_fails_safely_when_hard_links_are_unavailable(self):
+    def test_first_install_succeeds_when_hard_links_are_unavailable(self):
         with mock.patch.object(installer.os, "link", side_effect=OSError("not supported")):
-            with self.assertRaisesRegex(installer.InstallError, "filesystem supporting hard links"):
+            installer.install(self.source, self.target)
+        self.assertEqual(self.package.read_bytes(), installer.build_package(self.source))
+        self.assertEqual(list(self.target.iterdir()), [self.package])
+
+    def test_hard_link_source_is_a_temporary_sibling_not_the_source_checkout(self):
+        with mock.patch.object(installer.os, "link", wraps=installer.os.link) as link:
+            installer.install(self.source, self.target)
+        source, destination = map(Path, link.call_args.args)
+        self.assertEqual(source.parent, self.target)
+        self.assertEqual(destination, self.package)
+        self.assertNotEqual(source.parent, self.source)
+
+    def test_fallback_preserves_package_appearing_before_exclusive_create(self):
+        def link_unavailable(source, destination):
+            Path(destination).write_bytes(b"competing package")
+            raise OSError("hard links unavailable")
+
+        with mock.patch.object(installer.os, "link", side_effect=link_unavailable):
+            with self.assertRaisesRegex(installer.InstallError, "appeared during installation"):
                 installer.install(self.source, self.target)
-        self.assertEqual(list(self.target.iterdir()), [])
+        self.assertEqual(self.package.read_bytes(), b"competing package")
+        self.assertEqual(list(self.target.iterdir()), [self.package])
+
+    def test_fallback_write_flush_and_fsync_failures_clean_own_partial_file(self):
+        self.target.mkdir()
+        real_open = Path.open
+
+        class FailingStream:
+            def __init__(self, stream, stage):
+                self.stream = stream
+                self.stage = stage
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                self.stream.close()
+
+            def fileno(self):
+                return self.stream.fileno()
+
+            def write(self, data):
+                if self.stage == "write":
+                    self.stream.write(data[:10])
+                    raise OSError("write failed")
+                return self.stream.write(data)
+
+            def flush(self):
+                if self.stage == "flush":
+                    raise OSError("flush failed")
+                return self.stream.flush()
+
+        for stage in ("write", "flush", "fsync"):
+            def open_failing(path, *args, **kwargs):
+                stream = real_open(path, *args, **kwargs)
+                return FailingStream(stream, stage)
+
+            with self.subTest(stage=stage), \
+                    mock.patch.object(Path, "open", autospec=True, side_effect=open_failing), \
+                    mock.patch.object(installer.os, "fsync", side_effect=OSError("fsync failed")):
+                with self.assertRaisesRegex(installer.InstallError, stage + " failed"):
+                    installer.write_new_package(self.package, b"complete new package")
+            self.assertFalse(self.package.exists())
+
+    def test_fallback_failure_preserves_a_concurrently_replaced_package(self):
+        self.target.mkdir()
+
+        def replace_then_fail(descriptor):
+            self.package.unlink()
+            self.package.write_bytes(b"replacement package")
+            raise OSError("flush failed")
+
+        with mock.patch.object(installer.os, "fsync", side_effect=replace_then_fail):
+            with self.assertRaisesRegex(installer.InstallError, "flush failed"):
+                installer.write_new_package(self.package, b"new package")
+        self.assertEqual(self.package.read_bytes(), b"replacement package")
+
+    def test_fallback_keeps_partial_file_when_identity_is_unavailable(self):
+        self.target.mkdir()
+        identity = mock.Mock(st_ino=0)
+        with mock.patch.object(installer.os, "fstat", return_value=identity), \
+                mock.patch.object(installer.os, "fsync", side_effect=OSError("flush failed")):
+            with self.assertRaisesRegex(installer.InstallError, "Inspect"):
+                installer.write_new_package(self.package, b"new package")
+        self.assertEqual(self.package.read_bytes(), b"new package")
 
     def test_change_during_backup_is_preserved_with_original_backup(self):
         self.write_existing()
