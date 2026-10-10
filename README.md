@@ -17,12 +17,30 @@ A standard Windows installation normally uses `%APPDATA%\Sublime Text\Installed 
 
 ### Install from source
 
+Run this command from the source project root (requires a local Python 3 installation):
+
+```sh
+python scripts/install.py
+```
+
+The script copies the three runtime files, including the hidden `.python-version` file, into the current user's default Sublime Text 4 `Packages/RevealInDefaultExplorer` directory. Running it again updates those three files and preserves other files in that directory. Add `--dry-run` to preview the destination without writing any files.
+
+For a portable installation or custom data directory, use **Preferences → Browse Packages…** to locate the active instance's `Packages` directory, then specify it explicitly:
+
+```sh
+python scripts/install.py --packages-dir "D:/Sublime Text/Data/Packages"
+```
+
+Restart the editor after installation. If `Installed Packages/RevealInDefaultExplorer.sublime-package` already exists in the same data directory, the script reports an error. Remove that package before running the script to avoid a mixed installation.
+
+You can also install manually:
+
 1. Extract `sublime-reveal-default-explorer-source-1.0.0.zip`.
 2. Choose **Preferences → Browse Packages…** to open the `Packages` directory.
 3. Copy only the source archive's `RevealInDefaultExplorer` folder into that directory.
 4. Confirm that `Packages/RevealInDefaultExplorer/RevealInDefaultExplorer.py` exists, with `Tab Context.sublime-menu` and the hidden `.python-version` file in the same folder. Then restart the editor.
 
-Do not copy the entire source project or its test directory into `Packages`. This plugin does not require Package Control, an API key, or a separate Python installation.
+Do not copy the entire source project or its test directory into `Packages`. The plugin itself does not require Package Control, an API key, or a separate Python installation; only the optional installer script requires local Python.
 
 ## Usage and limitations
 
