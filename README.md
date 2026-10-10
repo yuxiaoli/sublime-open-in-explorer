@@ -1,6 +1,6 @@
-# Open in Explorer — RevealInDefaultExplorer
+# Open in Explorer / Open in Terminal — RevealInDefaultExplorer
 
-An independent Sublime Text 4 plugin with no third-party dependencies. Right-click a tab and select **Open in Explorer** to reveal that tab's file in the file manager. The menu label is exactly `Open in Explorer`, including capitalization and spaces.
+An independent Sublime Text 4 plugin with no third-party dependencies. Right-click a tab and select **Open in Explorer** to reveal that tab's file in the file manager, or **Open in Terminal** to open a terminal in the file's directory.
 
 ## Installation
 
@@ -45,8 +45,9 @@ Do not copy the entire source project or its test directory into `Packages`. The
 ## Usage and limitations
 
 - Right-click the tab you want to reveal and select **Open in Explorer**. The command uses the clicked tab, including inactive tabs and tabs in other groups; you do not need to activate it first.
+- Select **Open in Terminal** to open a terminal in the clicked file's directory. This also supports inactive tabs, other groups, and image tabs, without saving or executing the file.
 - For a saved file with unsaved changes, the command reveals the existing file on disk without saving the buffer.
-- The menu item is disabled for untitled buffers or buffers without a file on disk, missing or deleted files, and inaccessible paths. If the file disappears after the menu opens, the command stops and displays a status-bar message.
+- The menu items are disabled for untitled buffers or buffers without a file on disk, missing or deleted files, and inaccessible paths. If the file disappears after the menu opens, the command stops and displays a status-bar message.
 - Image tabs can also be revealed. HTML and other tabs without an associated file on disk are disabled.
 - Spaces, Unicode, UNC paths, `$`, and backslashes are treated as part of the path; paths are never assembled into shell commands. Symbolic links retain the path shown in the tab rather than being resolved to the target's path. Broken links are disabled.
 
@@ -56,10 +57,20 @@ The plugin passes the directory and filename to Sublime's built-in `open_dir` co
 
 The built-in command does not return a result that lets the plugin confirm that the GUI opened or selected the file successfully. Even after the file passes validation and the command is issued, an OS-level launch failure may only appear in the Sublime console. The plugin does not display a false success message.
 
+### Open in Terminal
+
+- Windows: opens a new Windows Terminal window using `wt.exe` on PATH and its default profile. If it cannot be found or its execution alias fails to launch, the plugin uses `pwsh.exe` or `powershell.exe` to open a new PowerShell console.
+- macOS: opens the file's directory in the system Terminal application.
+- Linux: searches PATH for `gnome-terminal`, `konsole`, `xfce4-terminal`, and `xterm`, in that order, and uses the first available program. If none is available, the status bar asks you to install a supported terminal.
+
+The file's directory is passed as the process working directory or a separate argument, without constructing a `cd` command. Windows Terminal uses `-d .` to resolve the process working directory, keeping semicolons in the path out of its multiple-command parser. [Official Windows Terminal FAQ](https://github.com/microsoft/terminal/wiki/Frequently-Asked-Questions-%28FAQ%29), [Command-line arguments](https://learn.microsoft.com/windows/terminal/command-line-arguments)
+
+If the terminal process cannot be started, the plugin displays a status-bar message. After a launch request is issued, terminal settings, shell startup scripts, or the desktop session may still affect the actual working directory and window display; the plugin does not confirm GUI success. Close the terminal window to end that session.
+
 ## Compatibility
 
 - Requires Sublime Text 4 **build 4088 or later**, using `Sheet.file_name()`, which was introduced in build 4088. Sublime Text 2 and 3 are not supported.
-- At the documentation review on 2026-10-07, the official stable release was build 4215, released on 2026-09-25. Actual runtime acceptance testing of that release has not been completed in this cloud environment. [Official download and release history](https://www.sublimetext.com/download)
+- At the documentation review on 2026-10-07, the official stable release was build 4215, released on 2026-09-25. Actual runtime acceptance testing of that release was not completed in the cloud environment. [Official download and release history](https://www.sublimetext.com/download)
 - `.python-version` is set to `3.8`: earlier ST4 versions use their Python 3.8 host, while newer versions map this value to Python 3.14 for compatibility. The plugin does not depend on the deprecated Python 3.3 host. [Official Python environment documentation](https://www.sublimetext.com/docs/api_environments.html)
 
 ## Uninstallation
@@ -68,7 +79,7 @@ Close Sublime Text, delete `Installed Packages/RevealInDefaultExplorer.sublime-p
 
 ## Implementation and development validation
 
-The plugin implementation consists of one Python module, one tab-menu file, and a Python host-selection file. The command reads the `group` and `index` supplied by the context menu and resolves the tab using `sheets_in_group`. It does not fall back to the active tab or change focus. If the editor has not replaced the `-1` placeholder arguments, the command is disabled to prevent a negative index from selecting the wrong tab. Before calling `open_dir`, it uses the installed editor's `expand_variables` to verify that the escaped arguments restore the original literal paths; if they do not, it stops and displays a message. At runtime, it only checks path existence and invokes the built-in command. It does not read file contents or write to files or the registry.
+The plugin implementation consists of one Python module, one tab-menu file, and a Python host-selection file. Both commands share validation of the context menu's `group` and `index` arguments and resolve the tab using `sheets_in_group`. They do not fall back to the active tab or switch editor tabs. If the editor has not replaced the `-1` placeholder arguments, the commands are disabled to prevent a negative index from selecting the wrong tab. Before calling `open_dir`, the Explorer command uses the installed editor's `expand_variables` to verify that the escaped arguments restore the original literal paths; if they do not, it stops and displays a message. The Terminal command uses `subprocess.Popen` with an argument list and explicitly sets `shell=False`. The plugin does not read file contents, save buffers, or write to the registry.
 
 The official menu documentation confirms that `Tab Context.sublime-menu` defines the tab context menu. Details of automatic `group/index` substitution come from the original author's working example and user confirmations on the official forum; the current menu documentation does not describe these two parameters individually. The current official release package was not obtained for inspection, and the stub tests do not establish that the editor performs this substitution. [Menu documentation](https://www.sublimetext.com/docs/menus.html), [API reference](https://www.sublimetext.com/docs/api_reference.html), [Original tab-argument example](https://forum.sublimetext.com/t/opening-a-files-location-under-tab-context/40002)
 
@@ -79,8 +90,8 @@ python3 -m unittest discover -s tests -v
 python3 scripts/build.py
 ```
 
-The build produces the installable package, a source ZIP, `SHA256SUMS`, and a manifest of file sizes and hashes. Tests use minimal Sublime stubs and the standard library's `ntpath` for Windows path handling. These tests are not equivalent to acceptance testing in the actual Sublime GUI or Windows Explorer. See `qa/VALIDATION.md` for detailed evidence and `qa/EDITOR_QA.md` for the manual Windows checks.
+The build produces the installable package, a source ZIP, `SHA256SUMS`, and a manifest of file sizes and hashes. Tests use minimal Sublime stubs, the standard library's `ntpath` for Windows path handling, and mocks for terminal process launches. These tests are not equivalent to acceptance testing in the actual Sublime GUI, Windows Explorer, or a terminal. See `qa/VALIDATION.md` for detailed evidence and `qa/EDITOR_QA.md` for manual checks.
 
 ## Quick start
 
-Copy `RevealInDefaultExplorer.sublime-package` into the active Sublime data directory's `Installed Packages`, then restart. Right-click the file tab and select **Open in Explorer**. The clicked tab is resolved even when inactive or in another group. Buffers without a file on disk and missing files are disabled. Existing dirty buffers are not saved. Requires ST4 build 4088+; build 4135+ is recommended for Windows replacement-manager integration. Actual file-manager selection depends on Sublime and OS support. Remove the installed package to uninstall.
+Copy `RevealInDefaultExplorer.sublime-package` into the active Sublime data directory's `Installed Packages`, then restart. Right-click the file tab and select **Open in Explorer** to reveal the file, or **Open in Terminal** to open its directory in a terminal. Windows uses Windows Terminal with a PowerShell fallback; macOS uses Terminal; Linux searches for GNOME Terminal, Konsole, Xfce Terminal or xterm. The clicked tab is resolved even when inactive or in another group. Unsaved or missing files are disabled. Existing dirty buffers are not saved. Requires ST4 build 4088+; build 4135+ is recommended for Windows replacement-manager integration. Actual file-manager selection depends on Sublime and OS support. Remove the installed package to uninstall.

@@ -4,5 +4,10 @@
         "caption": "Open in Explorer",
         "command": "reveal_in_default_explorer",
         "args": { "group": -1, "index": -1 }
+    },
+    {
+        "caption": "Open in Terminal",
+        "command": "open_in_terminal",
+        "args": { "group": -1, "index": -1 }
     }
 ]

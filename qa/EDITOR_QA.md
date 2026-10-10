@@ -2,7 +2,7 @@
 
 Status for this delivery: **not run**. Stub tests cannot validate native menu argument substitution, the editor's variable expansion, launching a manager, or Explorer selection. Use a disposable Sublime profile and files you own. This checklist does not authorize installing on anyone else's device.
 
-1. Install the `.sublime-package` in an ST4 build 4088+ profile. Restart. Check the Sublime console for load errors. Confirm the tab context menu has exactly one item labeled **Open in Explorer**.
+1. Install the `.sublime-package` in an ST4 build 4088+ profile. Restart. Check the Sublime console for load errors. Confirm the tab context menu has exactly one **Open in Explorer** item and one **Open in Terminal** item.
 2. Save `active.txt` and `中文 inactive file.txt` in different directories. Keep the first active; right-click the second tab. Invoke the item and verify the second file is selected in Windows Explorer. Verify the editor still has the same active tab.
 3. Split into two groups. Put an image tab before a text tab in group 2; keep group 1 active. Right-click the later text tab in group 2 and verify its file, then repeat for the image tab. This checks native group/index substitution and sheet ordering.
 4. Use an untitled buffer containing unsaved text. Confirm the item is visible but disabled. Edit an already saved file without saving; invoke the item and verify the disk content is unchanged.
@@ -10,6 +10,8 @@ Status for this delivery: **not run**. Stub tests cannot validate native menu ar
 6. Test spaces, Chinese/Unicode, apostrophes, `&`, literal `$file_name`, `${file}`, and a folder named `$file_path`. On Windows also test a drive root and an authorized UNC share. Confirm the exact intended file is selected and no unrelated path is opened. On POSIX additionally test a literal backslash filename.
 7. If using an Explorer replacement, record the Windows version, ST build and replacement version. Verify selection there separately. Compare Sublime's standard Open Containing Folder on the same path; replacement integration depends on native OS hooks.
 8. Repeat applicable cases on macOS/Linux. Record whether native integration selects the file or only opens its directory. Avoid calling this Windows Explorer acceptance.
-9. Remove the installed package, restart, and confirm the item disappears.
+9. Invoke **Open in Terminal** on an inactive tab and on a tab in another group. In the new terminal check `Get-Location` (PowerShell) or `pwd` (macOS/Linux); it must equal the clicked file's parent directory. Repeat with dirty files, image tabs, Unicode/spaces, `$`, apostrophes, `&` and semicolons. On Windows also check a drive root and an authorized UNC share. Confirm no file is saved or executed. Test disabled untitled/missing-file cases and a file deleted after the menu opens.
+10. On Windows verify Windows Terminal uses its default profile; if `wt.exe` is unavailable, check the new PowerShell console fallback. On macOS verify Terminal; on Linux record which of GNOME Terminal, Konsole, Xfce Terminal or xterm was selected. Check useful status messages when no supported terminal is on PATH or process launch fails. Record any shell startup script that changes the initial directory separately.
+11. Remove the installed package, restart, and confirm both items disappear.
 
 Record build, OS, runtime, menu label, expected/actual selected path, pass/fail, and screenshot or observed GUI evidence. Keep this separate from the stub test log. Programmatic `window.run_command("reveal_in_default_explorer", {"group": 1, "index": 1})` alone does not validate a real right-click event.

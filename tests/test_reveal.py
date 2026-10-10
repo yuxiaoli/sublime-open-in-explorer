@@ -330,9 +330,12 @@ class RevealTests(unittest.TestCase):
                 self.assertEqual(decode_literal_argument(args["file"]), ntpath.basename(path))
 
     def test_snippet_variable_names_in_directory_and_file_are_literal(self):
-        folder = self.root / "$file_path ${folder} \\$file_path"
+        # Backslashes are path separators on Windows, not filename characters.
+        suffix = " \\$file_path" if os.name != "nt" else ""
+        folder = self.root / ("$file_path ${folder}" + suffix)
         folder.mkdir()
-        path = folder / "$file_name ${file} \\$file_name.txt"
+        suffix = " \\$file_name" if os.name != "nt" else ""
+        path = folder / ("$file_name ${file}" + suffix + ".txt")
         path.write_text("literal names on disk", encoding="utf-8")
         self.window.groups[0][1].path = str(path)
         self.assertTrue(self.command.is_enabled(group=0, index=1))

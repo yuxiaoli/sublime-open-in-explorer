@@ -1,12 +1,14 @@
-"""Reveal the file belonging to the tab that opened the context menu."""
+"""Open the clicked tab's file in a file manager or its directory in a terminal."""
 
 import os
+import shutil
+import subprocess
 
 import sublime
 import sublime_plugin
 
 
-class RevealInDefaultExplorerCommand(sublime_plugin.WindowCommand):
+class _FileTab:
     def _file_name(self, group, index):
         # Sublime substitutes these menu args with the clicked tab's location.
         # Unresolved sentinels must never become Python's negative indexing or
@@ -47,6 +49,8 @@ class RevealInDefaultExplorerCommand(sublime_plugin.WindowCommand):
     def is_enabled(self, group=-1, index=-1):
         return self._is_file(self._file_name(group, index))
 
+
+class RevealInDefaultExplorerCommand(_FileTab, sublime_plugin.WindowCommand):
     @staticmethod
     def _literal(value):
         # open_dir expands snippet-style variables. Preserve literal backslashes
@@ -74,3 +78,55 @@ class RevealInDefaultExplorerCommand(sublime_plugin.WindowCommand):
             self.window.run_command("open_dir", args)
         except (OSError, RuntimeError, ValueError):
             sublime.status_message("Open in Explorer: could not open the file manager.")
+
+
+def _launch_terminal(directory):
+    platform = sublime.platform()
+    if platform == "windows":
+        terminal = shutil.which("wt.exe")
+        if terminal:
+            try:
+                # Resolve '.' from cwd, keeping literal paths (including ';')
+                # out of Windows Terminal's command-separator parser.
+                subprocess.Popen([terminal, "-w", "new", "-d", "."],
+                                 cwd=directory, shell=False)
+                return
+            except OSError:
+                # An unavailable execution alias may still be present on PATH.
+                pass
+        powershell = shutil.which("pwsh.exe") or shutil.which("powershell.exe")
+        if not powershell:
+            raise FileNotFoundError("Windows Terminal or PowerShell was not found on PATH.")
+        subprocess.Popen([powershell, "-NoExit"], cwd=directory, shell=False,
+                         creationflags=subprocess.CREATE_NEW_CONSOLE)
+    elif platform == "osx":
+        subprocess.Popen(["/usr/bin/open", "-a", "Terminal", directory],
+                         cwd=directory, shell=False)
+    elif platform == "linux":
+        for name, args in (
+                ("gnome-terminal", ["--working-directory", directory]),
+                ("konsole", ["--workdir", directory]),
+                ("xfce4-terminal", ["--working-directory", directory]),
+                ("xterm", [])):
+            terminal = shutil.which(name)
+            if terminal:
+                subprocess.Popen([terminal] + args, cwd=directory, shell=False)
+                return
+        raise FileNotFoundError("Install GNOME Terminal, Konsole, Xfce Terminal or xterm.")
+    else:
+        raise ValueError("Unsupported terminal platform: " + platform)
+
+
+class OpenInTerminalCommand(_FileTab, sublime_plugin.WindowCommand):
+    def run(self, group=-1, index=-1):
+        path = self._file_name(group, index)
+        if path is None:
+            sublime.status_message("Open in Terminal: this tab has no saved file.")
+            return
+        if not self._is_file(path):
+            sublime.status_message("Open in Terminal: file is missing or inaccessible.")
+            return
+        try:
+            _launch_terminal(os.path.dirname(path))
+        except (OSError, RuntimeError, ValueError) as error:
+            sublime.status_message("Open in Terminal: could not start a terminal: {}".format(error))

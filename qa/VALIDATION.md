@@ -1,4 +1,13 @@
-# Delivery validation — 2026-10-07 UTC
+# Validation
+
+## Open in Terminal — 2026-10-10 (Asia/Shanghai)
+
+- **42 automated tests pass** on Windows with bundled CPython 3.12: the 28 Explorer tests and 14 new Terminal tests. The existing literal-name fixture now uses backslashes as filename characters only on POSIX; its Windows case still checks literal dollar signs and snippet-like names.
+- Both menu commands share the clicked-sheet and file validation. Terminal tests cover inactive/dirty tabs in another group, image tabs, disabled/invalid paths and coordinates, deletion after enablement, Unicode/spaces/punctuation, Windows drive roots and UNC paths, platform launch arguments, PowerShell fallback, unavailable terminal aliases and launch failures.
+- Terminal launch uses argument lists with `shell=False`. Windows Terminal receives `-d .` with the clicked file's directory as `cwd`, so that directory never enters its command-separator parser. No file contents are executed or saved by the plugin.
+- All terminal processes are mocked in these tests. Real Sublime right-click substitution, terminal window display, shell startup behavior and actual initial working directories have **not** been validated in the GUI. Manual acceptance steps are in `qa/EDITOR_QA.md`.
+
+## Original delivery — 2026-10-07 UTC
 
 Package version: **1.0.0**. Exact menu label: **Open in Explorer**.
 
